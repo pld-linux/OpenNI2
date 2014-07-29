@@ -1,0 +1,84 @@
+--- OpenNI2-2.2-beta2/Source/Core/Makefile.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Core/Makefile	2014-07-27 18:11:46.955853790 +0200
+@@ -5,14 +5,12 @@
+ INC_DIRS = \
+ 	../../Include \
+ 	../../ThirdParty/PSCommon/XnLib/Include \
+-	../Drivers/OniFile/Formats \
+-	../../ThirdParty/LibJPEG
++	../Drivers/OniFile/Formats
+ 
+ SRC_FILES = \
+ 	*.cpp \
+ 	../Drivers/OniFile/Formats/XnCodec.cpp \
+-	../Drivers/OniFile/Formats/XnStreamCompression.cpp \
+-	../../ThirdParty/LibJPEG/*.c \
++	../Drivers/OniFile/Formats/XnStreamCompression.cpp
+ 
+ ifeq ("$(OSTYPE)","Darwin")
+ 	INC_DIRS += /opt/local/include
+@@ -23,7 +21,7 @@
+ LIB_NAME = OpenNI2
+ 
+ LIB_DIRS = ../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+-USED_LIBS = XnLib dl pthread
++USED_LIBS = XnLib jpeg dl pthread
+ ifneq ("$(OSTYPE)","Darwin")
+         USED_LIBS += rt  
+ endif
+--- OpenNI2-2.2-beta2/Source/Drivers/OniFile/Makefile.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/OniFile/Makefile	2014-07-27 18:12:32.599185209 +0200
+@@ -6,14 +6,12 @@
+ 	. \
+ 	../../../Include \
+ 	../../../ThirdParty/PSCommon/XnLib/Include \
+-	../../../ThirdParty/LibJPEG \
+ 	Formats
+ 
+ SRC_FILES = \
+ 	*.cpp \
+ 	Formats/*.cpp \
+-	XnLibExtensions/*.cpp \
+-	../../../ThirdParty/LibJPEG/*.c
++	XnLibExtensions/*.cpp
+ 
+ 
+ ifeq ("$(OSTYPE)","Darwin")
+@@ -25,7 +23,7 @@
+ LIB_NAME = OniFile
+ 
+ LIB_DIRS = ../../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+-USED_LIBS = XnLib pthread 
++USED_LIBS = XnLib jpeg pthread
+ ifneq ("$(OSTYPE)","Darwin")
+         USED_LIBS += rt  
+ endif
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/Makefile.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/Makefile	2014-07-27 18:12:55.702517573 +0200
+@@ -7,7 +7,6 @@
+ 	Include \
+ 	../../../Include \
+ 	../../../ThirdParty/PSCommon/XnLib/Include \
+-	../../../ThirdParty/LibJPEG \
+ 	../../DepthUtils
+ 
+ SRC_FILES = \
+@@ -16,8 +15,7 @@
+ 	DriverImpl/*.cpp\
+ 	Formats/*.cpp	\
+ 	Include/*.cpp	\
+-	Sensor/*.cpp	\
+-	../../../ThirdParty/LibJPEG/*.c
++	Sensor/*.cpp
+ 
+ 
+ ifeq ("$(OSTYPE)","Darwin")
+@@ -30,7 +28,7 @@
+ 
+ LIB_DIRS += ../../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+ LIB_DIRS += $(BIN_DIR)/$(PLATFORM)-$(CFG)
+-USED_LIBS = XnLib dl pthread DepthUtils
++USED_LIBS = XnLib dl pthread DepthUtils jpeg
+ ifneq ("$(OSTYPE)","Darwin")
+         USED_LIBS += rt usb-1.0 udev
+ else

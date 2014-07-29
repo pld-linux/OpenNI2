@@ -1,0 +1,10 @@
+--- OpenNI2-2.2-beta2/ThirdParty/PSCommon/BuildSystem/Platform.x86.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/ThirdParty/PSCommon/BuildSystem/Platform.x86	2014-07-27 18:09:19.649193305 +0200
+@@ -19,7 +19,5 @@
+ 		ifeq ($(SSSE3_ENABLED), 1)
+ 			CFLAGS += -mssse3
+ 		endif
+-	else
+-		DUMMY:=($error "Only SSE2 and SSE3 are supported")
+ 	endif
+ endif
