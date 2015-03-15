@@ -14,7 +14,7 @@ Summary(pl.UTF-8):	Szkielet OpenNI2 do urządzeń służących interakcji z natu
 Name:		OpenNI2
 Version:	2.2.0.33
 %define	subver	beta2
-Release:	0.%{subver}.1
+Release:	0.%{subver}.2
 License:	Apache v2.0
 Group:		Libraries
 Source0:	https://github.com/occipital/OpenNI2/archive/2.2-%{subver}/%{name}-%{version}.tar.gz
@@ -39,13 +39,13 @@ BuildRequires:	rpmbuild(macros) >= 1.566
 BuildRequires:	sed >= 4.0
 BuildRequires:	udev-devel
 # NOTE: other platforms need adding a dozen of defines in Include/Linux-*/*.h
-ExclusiveArch:	%{ix86} %{x8664} arm
+ExclusiveArch:	%{ix86} %{x8664} x32 arm
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %ifarch %{ix86}
 %define		openni_platform	x86
 %endif
-%ifarch %{x8664}
+%ifarch %{x8664} x32
 %define		openni_platform	x64
 %endif
 %ifarch arm
