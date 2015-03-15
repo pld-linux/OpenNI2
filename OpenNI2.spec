@@ -14,7 +14,7 @@ Summary(pl.UTF-8):	Szkielet OpenNI2 do urządzeń służących interakcji z natu
 Name:		OpenNI2
 Version:	2.2.0.33
 %define	subver	beta2
-Release:	0.%{subver}.2
+Release:	0.%{subver}.3
 License:	Apache v2.0
 Group:		Libraries
 Source0:	https://github.com/occipital/OpenNI2/archive/2.2-%{subver}/%{name}-%{version}.tar.gz
@@ -161,7 +161,7 @@ cp -p Config/OpenNI2/Drivers/*.ini $RPM_BUILD_ROOT%{_libdir}/OpenNI2/Drivers
 cp -p Packaging/Linux/primesense-usb.rules $RPM_BUILD_ROOT/lib/udev/rules.d/55-primesense-usb.rules
 cp -p Include/*.h $RPM_BUILD_ROOT%{_includedir}/openni2
 cp -pr Include/Driver $RPM_BUILD_ROOT%{_includedir}/openni2
-%ifarch %{ix86} %{x8664}
+%ifarch %{ix86} %{x8664} x32
 cp -pr Include/Linux-x86 $RPM_BUILD_ROOT%{_includedir}/openni2
 %endif
 %ifarch arm
