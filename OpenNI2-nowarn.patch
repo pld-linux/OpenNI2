@@ -1,0 +1,92 @@
+Avoid:
+"error: array subscript is below array bounds [-Werror=array-bounds]"
+"directive writing ... bytes into a region of size ... [-Werror=format-overflow=]"
+"error: ... may be used uninitialized in this function [-Werror=maybe-uninitialized]"
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/Formats/XnFormatsMirror.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/Formats/XnFormatsMirror.cpp	2020-03-15 21:05:31.154704162 +0100
+@@ -43,7 +43,6 @@
+ 	XnUInt8* pSrcEnd = pSrc + nBufferSize;
+ 	XnUInt8* pDest = NULL;
+ 	XnUInt8* pDestVal = &pLineBuffer[0] + nLineSize - 1;
+-	XnUInt8* pDestEnd = &pLineBuffer[0] - 1;
+ 
+ 	if (nLineSize > XN_MIRROR_MAX_LINE_SIZE)
+ 	{
+@@ -55,7 +54,7 @@
+ 		xnOSMemCopy(pLineBuffer, pSrc, nLineSize);
+ 
+ 		pDest = pDestVal;
+-		while (pDest != pDestEnd)
++		while (pDest >= pLineBuffer)
+ 		{
+ 			*pSrc = *pDest;
+ 
+@@ -76,7 +75,6 @@
+ 	XnUInt16* pSrcEnd = pSrc + nBufferSize / sizeof(XnUInt16);
+ 	XnUInt16* pDest = NULL;
+ 	XnUInt16* pDestVal = &pLineBuffer[0] + nLineSize - 1;
+-	XnUInt16* pDestEnd = &pLineBuffer[0] - 1;
+ 	XnUInt16 nMemCpyLineSize = (XnUInt16)(nLineSize * sizeof(XnUInt16));
+ 	XnUInt16 nValue;
+ 
+@@ -90,7 +88,7 @@
+ 		xnOSMemCopy(pLineBuffer, pSrc, nMemCpyLineSize);
+ 
+ 		pDest = pDestVal;
+-		while (pDest != pDestEnd)
++		while (pDest >= pLineBuffer)
+ 		{
+ 			nValue = pDest[0];
+ 			pSrc[0] = nValue;
+@@ -112,7 +110,6 @@
+ 	XnUInt8* pSrcEnd = pSrc + nBufferSize;
+ 	XnUInt8* pDest = NULL;
+ 	XnUInt8* pDestVal = &pLineBuffer[0] + nLineSize * 3 - 1;
+-	XnUInt8* pDestEnd = &pLineBuffer[0] - 1;
+ 	XnUInt16 nMemCpyLineSize = (XnUInt16)(nLineSize * 3);
+ 
+ 	if (nMemCpyLineSize > XN_MIRROR_MAX_LINE_SIZE)
+@@ -125,7 +122,7 @@
+ 		xnOSMemCopy(pLineBuffer, pSrc, nMemCpyLineSize);
+ 
+ 		pDest = pDestVal;
+-		while (pDest != pDestEnd)
++		while (pDest >= pLineBuffer)
+ 		{
+ 			*pSrc = *(pDest-2);
+ 			*(pSrc+1) = *(pDest-1);
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/Sensor/XnFrameStreamProcessor.h.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/Sensor/XnFrameStreamProcessor.h	2020-03-15 21:15:21.744837994 +0100
+@@ -170,8 +170,8 @@
+ 	/* A pointer to the triple frame buffer of this stream. */
+ 	XnFrameBufferManager* m_pTripleBuffer;
+ 
+-	XnChar m_csInDumpMask[100];
+-	XnChar m_csInternalDumpMask[100];
++	XnChar m_csInDumpMask[220];
++	XnChar m_csInternalDumpMask[220];
+ 	XnDumpFile* m_InDump;
+ 	XnDumpFile* m_InternalDump;
+ 	XnBool m_bFrameCorrupted;
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/Sensor/XnSensorFirmwareParams.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/Sensor/XnSensorFirmwareParams.cpp	2020-03-15 21:21:18.092907491 +0100
+@@ -262,7 +262,7 @@
+ 	nRetVal = m_AllFirmwareParams.Set(&Property, param);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+-	XnChar csNewName[XN_DEVICE_MAX_STRING_LENGTH];
++	XnChar csNewName[XN_DEVICE_MAX_STRING_LENGTH + 10];
+ 	sprintf(csNewName, "%s (%d)", Property.GetName(), nFirmwareParam);
+ 
+ 	Property.UpdateName("Firmware", csNewName);
+--- OpenNI2-2.2-beta2/Source/Tools/NiViewer/Device.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Tools/NiViewer/Device.cpp	2020-03-15 22:01:52.709718040 +0100
+@@ -364,7 +364,7 @@
+ 
+ void toggleCloseRange(int )
+ {
+-	bool bCloseRange;
++	bool bCloseRange = false;
+ 	g_depthStream.getProperty(XN_STREAM_PROPERTY_CLOSE_RANGE, &bCloseRange);
+ 
+ 	bCloseRange = !bCloseRange;

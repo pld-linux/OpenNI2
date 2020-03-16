@@ -1,0 +1,14 @@
+--- OpenNI2-2.2-beta2/Include/OniPlatform.h.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Include/OniPlatform.h	2020-03-15 20:52:18.458998563 +0100
+@@ -37,9 +37,9 @@
+ #	include "Win32/OniPlatformWin32.h"
+ #elif defined (ANDROID) && defined (__arm__)
+ #	include "Android-Arm/OniPlatformAndroid-Arm.h"
+-#elif (__linux__ && (i386 || __x86_64__))
++#elif (defined(__linux__) && (defined(__i386__) || defined(__x86_64__)))
+ #	include "Linux-x86/OniPlatformLinux-x86.h"
+-#elif (__linux__ && __arm__)
++#elif (defined(__linux__) && defined(__arm__))
+ #	include "Linux-Arm/OniPlatformLinux-Arm.h"
+ #elif _ARC
+ #	include "ARC/OniPlaformARC.h"

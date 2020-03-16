@@ -14,7 +14,8 @@ Summary(pl.UTF-8):	Szkielet OpenNI2 do urządzeń służących interakcji z natu
 Name:		OpenNI2
 Version:	2.2.0.33
 %define	subver	beta2
-Release:	0.%{subver}.3
+%define	rel	4
+Release:	0.%{subver}.%{rel}
 License:	Apache v2.0
 Group:		Libraries
 Source0:	https://github.com/occipital/OpenNI2/archive/2.2-%{subver}/%{name}-%{version}.tar.gz
@@ -25,6 +26,9 @@ Patch2:		%{name}-link.patch
 Patch3:		%{name}-paths.patch
 Patch4:		%{name}-soname.patch
 Patch5:		%{name}-norpath.patch
+Patch6:		%{name}-defines.patch
+Patch7:		%{name}-nowarn.patch
+Patch8:		%{name}-c++.patch
 URL:		http://structure.io/openni
 BuildRequires:	OpenGL-devel
 BuildRequires:	OpenGL-glut-devel >= 3
@@ -126,9 +130,13 @@ Interfejs Javy do OpenNI2.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
 
 %build
-export CFLAGS="%{rpmcflags} -Wno-unused-local-typedefs -Wno-enum-compare"
+export CFLAGS="%{rpmcflags} -Wno-unused-local-typedefs -Wno-enum-compare -Wno-unused-local-typedefs -Wno-misleading-indentation"
+export CXXFLAGS="%{rpmcxxflags} -Wno-unused-local-typedefs -Wno-enum-compare -Wno-unused-local-typedefs -Wno-misleading-indentation"
 %{__make} \
 	CFG=Release \
 	CXX="%{__cxx}" \
@@ -141,7 +149,8 @@ export CFLAGS="%{rpmcflags} -Wno-unused-local-typedefs -Wno-enum-compare"
 cd Source/Documentation
 doxygen Doxyfile
 %if %{with java}
-javadoc -d java $(find ../../Wrappers/java/OpenNI.java/src/org/openni -type f)
+# fails with "unknown tag" errors since Java 8
+#javadoc -d java $(find ../../Wrappers/java/OpenNI.java/src/org/openni -type f)
 %endif
 %endif
 
