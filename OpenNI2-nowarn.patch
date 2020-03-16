@@ -1,7 +1,10 @@
-Avoid:
+Avoid (eventually fixing some bugs):
 "error: array subscript is below array bounds [-Werror=array-bounds]"
 "directive writing ... bytes into a region of size ... [-Werror=format-overflow=]"
 "error: ... may be used uninitialized in this function [-Werror=maybe-uninitialized]"
+"error: ... specified bound ... equals destination size [-Werror=stringop-truncation]"
+"error: ... may be used uninitialized in this function [-Werror=maybe-uninitialized]"
+"error: bitwise comparison always evaluates to true [-Werror=tautological-compare]"
 --- OpenNI2-2.2-beta2/Source/Drivers/PS1080/Formats/XnFormatsMirror.cpp.orig	2013-11-12 15:12:23.000000000 +0100
 +++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/Formats/XnFormatsMirror.cpp	2020-03-15 21:05:31.154704162 +0100
 @@ -43,7 +43,6 @@
@@ -90,3 +93,156 @@ Avoid:
  	g_depthStream.getProperty(XN_STREAM_PROPERTY_CLOSE_RANGE, &bCloseRange);
  
  	bCloseRange = !bCloseRange;
+--- OpenNI2-2.2-beta2/ThirdParty/PSCommon/XnLib/Source/XnProfiling.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/ThirdParty/PSCommon/XnLib/Source/XnProfiling.cpp	2020-03-16 17:35:12.614316974 +0100
+@@ -217,7 +217,8 @@
+ 			for (nChar = 0; nChar < gt_nStackDepth*2; ++nChar)
+ 				pSection->csName[nChar] = ' ';
+ 
+-			strncpy(pSection->csName + nChar, csSectionName, MAX_SECTION_NAME);
++			strncpy(pSection->csName + nChar, csSectionName, MAX_SECTION_NAME-nChar-1);
++			pSection->csName[MAX_SECTION_NAME-1] = 0;
+ 
+ 			if (strlen(pSection->csName) > g_ProfilingData.nMaxSectionName)
+ 				g_ProfilingData.nMaxSectionName = strlen(pSection->csName);
+--- OpenNI2-2.2-beta2/ThirdParty/PSCommon/XnLib/Include/XnString.h.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/ThirdParty/PSCommon/XnLib/Include/XnString.h	2020-03-16 17:57:12.079217543 +0100
+@@ -141,7 +141,7 @@
+ 	{
+ 
+ 		Resize(maxCapacity);
+-		strncpy(m_str, str, maxCapacity);
++		memccpy(m_str, str, 0, maxCapacity);
+ 
+ 	}
+ 	void Destroy()
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnDeviceBase.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnDeviceBase.cpp	2020-03-16 17:58:40.440453170 +0100
+@@ -1025,7 +1025,8 @@
+ 
+ 	// keep the stream name (we now delete the module, so the name will be lost)
+ 	XnChar strStreamName[XN_DEVICE_MAX_STRING_LENGTH];
+-	strncpy(strStreamName, StreamName, XN_DEVICE_MAX_STRING_LENGTH);
++	strncpy(strStreamName, StreamName, XN_DEVICE_MAX_STRING_LENGTH-1);
++	strStreamName[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ 
+ 	xnl::AutoCSLocker lock(m_hLock);
+ 
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnDeviceModule.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnDeviceModule.cpp	2020-03-16 17:59:17.422365422 +0100
+@@ -37,7 +37,8 @@
+ 	m_Lock(XN_MODULE_PROPERTY_LOCK, "Lock", FALSE, strName),
+ 	m_hLockCS(NULL)
+ {
+-	strncpy(m_strName, strName, XN_DEVICE_MAX_STRING_LENGTH);
++	strncpy(m_strName, strName, XN_DEVICE_MAX_STRING_LENGTH-1);
++	m_strName[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ 	m_Lock.UpdateSetCallback(SetLockStateCallback, this);
+ }
+ 
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnProperty.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnProperty.cpp	2020-03-16 18:00:07.741633986 +0100
+@@ -50,9 +50,11 @@
+ 
+ void XnProperty::UpdateName(const XnChar* strModule, const XnChar* strName)
+ {
+-	strncpy(m_strModule, strModule, XN_DEVICE_MAX_STRING_LENGTH);
++	strncpy(m_strModule, strModule, XN_DEVICE_MAX_STRING_LENGTH-1);
++	m_strModule[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ 	if (m_strName != strName) {
+-		strncpy(m_strName, strName, XN_DEVICE_MAX_STRING_LENGTH);
++		strncpy(m_strName, strName, XN_DEVICE_MAX_STRING_LENGTH-1);
++		m_strName[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ 	}
+ }
+ 
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnPropertySet.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnPropertySet.cpp	2020-03-16 18:00:49.980484729 +0100
+@@ -336,7 +336,8 @@
+ 	pEnumer->pModules = pSet->pData;
+ 	if (strModule != NULL)
+ 	{
+-		strncpy(pEnumer->strModule, strModule, XN_DEVICE_MAX_STRING_LENGTH);
++		strncpy(pEnumer->strModule, strModule, XN_DEVICE_MAX_STRING_LENGTH-1);
++		pEnumer->strModule[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ 	}
+ 	else
+ 	{
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/Sensor/XnSensorStreamHelper.h.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/Sensor/XnSensorStreamHelper.h	2020-03-16 18:08:27.534144181 +0100
+@@ -113,8 +113,9 @@
+ 		XnSensorStreamHelper::ConvertCallback pStreamToFirmwareFunc;
+ 		XnBool bProcessorProp;
+ 
+-		struct
++		struct TransactionStruct
+ 		{
++		        TransactionStruct() : bShouldOpen(false), bChooseProcessor(false) {}
+ 			XnBool bShouldOpen;
+ 			XnBool bChooseProcessor;
+ 		} CurrentTransaction;
+--- OpenNI2-2.2-beta2/Source/Drivers/PSLink/LinkProtoLib/XnLink24zYuv422Parser.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Source/Drivers/PSLink/LinkProtoLib/XnLink24zYuv422Parser.cpp	2020-03-16 18:13:34.383344763 +0100
+@@ -42,7 +42,7 @@
+ {
+ 	XnStatus nRetVal = XN_STATUS_OK;
+ 	
+-	if ((fragmentation | XN_LINK_FRAG_BEGIN) != 0)
++	if ((fragmentation & XN_LINK_FRAG_BEGIN) != 0)
+ 	{
+ 		m_dataFromPrevPacketBytes = 0;
+ 		m_tempYuvImageBytes = 0;
+@@ -76,7 +76,7 @@
+ 	}
+ 	
+ 	XnSizeT actualRead;
+-	nRetVal = Uncompress24z(pInput, inputSize, pOutput, &outputSize, m_lineWidthBytes, &actualRead, (fragmentation | XN_LINK_FRAG_END) == XN_LINK_FRAG_END);
++	nRetVal = Uncompress24z(pInput, inputSize, pOutput, &outputSize, m_lineWidthBytes, &actualRead, (fragmentation & XN_LINK_FRAG_END) == XN_LINK_FRAG_END);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+ 	pDst += outputSize;
+@@ -88,7 +88,7 @@
+ 		xnOSMemMove(m_dataFromPrevPacket, pInput + actualRead, m_dataFromPrevPacketBytes);
+ 	}
+ 
+-	if ((fragmentation | XN_LINK_FRAG_END) != 0)
++	if ((fragmentation & XN_LINK_FRAG_END) != 0)
+ 	{
+ 		outputSize = pDstEnd - pDst;
+ 		LinkYuvToRgb::Yuv422ToRgb888(m_tempYuvImage, m_tempYuvImageBytes, pDst, outputSize);
+--- OpenNI2-2.2-beta2/Samples/SimpleViewer/Viewer.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Samples/SimpleViewer/Viewer.cpp	2020-03-16 18:17:17.784896912 +0100
+@@ -67,7 +67,8 @@
+ 
+ {
+ 	ms_self = this;
+-	strncpy(m_strSampleName, strSampleName, ONI_MAX_STR);
++	strncpy(m_strSampleName, strSampleName, ONI_MAX_STR-1);
++	m_strSampleName[ONI_MAX_STR-1] = 0;
+ }
+ SampleViewer::~SampleViewer()
+ {
+--- OpenNI2-2.2-beta2/Samples/MultiDepthViewer/Viewer.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Samples/MultiDepthViewer/Viewer.cpp	2020-03-16 18:17:46.353040845 +0100
+@@ -67,7 +67,8 @@
+ 
+ {
+ 	ms_self = this;
+-	strncpy(m_strSampleName, strSampleName, ONI_MAX_STR);
++	strncpy(m_strSampleName, strSampleName, ONI_MAX_STR-1);
++	m_strSampleName[ONI_MAX_STR-1] = 0;
+ }
+ SampleViewer::~SampleViewer()
+ {
+--- OpenNI2-2.2-beta2/Samples/ClosestPointViewer/Viewer.cpp.orig	2013-11-12 15:12:23.000000000 +0100
++++ OpenNI2-2.2-beta2/Samples/ClosestPointViewer/Viewer.cpp	2020-03-16 18:18:12.364385897 +0100
+@@ -57,7 +57,8 @@
+ 
+ {
+ 	ms_self = this;
+-	strncpy(m_strSampleName, strSampleName, ONI_MAX_STR);
++	strncpy(m_strSampleName, strSampleName, ONI_MAX_STR-1);
++	m_strSampleName[ONI_MAX_STR-1] = 0;
+ 
+ 	m_pClosestPoint = new closest_point::ClosestPoint(deviceUri);
+ }
