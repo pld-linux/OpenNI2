@@ -98,9 +98,7 @@ Pliki nagłówkowe biblioteki OpenNI2.
 Summary:	OpenNI2 API documentation
 Summary(pl.UTF-8):	Dokumentacja API biblioteki OpenNI2
 Group:		Documentation
-%if "%{_rpmversion}" >= "5"
 BuildArch:	noarch
-%endif
 
 %description apidocs
 API and internal documentation for OpenNI2 library.
