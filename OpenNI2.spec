@@ -18,7 +18,8 @@ Version:	2.2.0.33
 Release:	0.%{subver}.%{rel}
 License:	Apache v2.0
 Group:		Libraries
-Source0:	https://github.com/occipital/OpenNI2/archive/2.2-%{subver}/%{name}-%{version}.tar.gz
+#Source0Download: https://github.com/structureio/OpenNI2/tags
+Source0:	https://github.com/structureio/OpenNI2/archive/2.2-%{subver}/%{name}-%{version}.tar.gz
 # Source0-md5:	3f2cd6a64776821fb2837c442539f65b
 Patch0:		%{name}-system-libs.patch
 Patch1:		%{name}-nosse.patch
@@ -39,11 +40,12 @@ BuildRequires:	libjpeg-devel
 BuildRequires:	libstdc++-devel >= 6:4.0
 BuildRequires:	libusb-devel >= 1.0.8
 BuildRequires:	python >= 1:2.6
+BuildRequires:	rpm-build >= 4.6
 BuildRequires:	rpmbuild(macros) >= 1.566
 BuildRequires:	sed >= 4.0
 BuildRequires:	udev-devel
 # NOTE: other platforms need adding a dozen of defines in Include/Linux-*/*.h
-ExclusiveArch:	%{ix86} %{x8664} x32 arm
+ExclusiveArch:	%{ix86} %{x8664} x32 %{arm}
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %ifarch %{ix86}
@@ -52,7 +54,7 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %ifarch %{x8664} x32
 %define		openni_platform	x64
 %endif
-%ifarch arm
+%ifarch %{arm}
 %define		openni_platform	Arm
 %endif
 
@@ -171,7 +173,7 @@ cp -pr Include/Driver $RPM_BUILD_ROOT%{_includedir}/openni2
 %ifarch %{ix86} %{x8664} x32
 cp -pr Include/Linux-x86 $RPM_BUILD_ROOT%{_includedir}/openni2
 %endif
-%ifarch arm
+%ifarch %{arm}
 cp -pr Include/Linux-Arm $RPM_BUILD_ROOT%{_includedir}/openni2
 %endif
 
