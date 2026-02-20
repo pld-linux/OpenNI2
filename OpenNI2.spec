@@ -14,7 +14,7 @@ Summary(pl.UTF-8):	Szkielet OpenNI2 do urządzeń służących interakcji z natu
 Name:		OpenNI2
 Version:	2.2.0.33
 %define	subver	beta2
-%define	rel	4
+%define	rel	5
 Release:	0.%{subver}.%{rel}
 License:	Apache v2.0
 Group:		Libraries
