@@ -9,12 +9,13 @@
 %if %{with ssse3}
 %define	with_sse3	1
 %endif
+%{?with_java:%{?use_default_jdk}}
 Summary:	OpenNI2 framework for Natural Interaction devices
 Summary(pl.UTF-8):	Szkielet OpenNI2 do urządzeń służących interakcji z naturą
 Name:		OpenNI2
 Version:	2.2.0.33
 %define	subver	beta2
-%define	rel	5
+%define	rel	6
 Release:	0.%{subver}.%{rel}
 License:	Apache v2.0
 Group:		Libraries
@@ -30,19 +31,23 @@ Patch5:		%{name}-norpath.patch
 Patch6:		%{name}-defines.patch
 Patch7:		%{name}-nowarn.patch
 Patch8:		%{name}-c++.patch
-URL:		http://structure.io/openni
+Patch9:		%{name}-seek.patch
+Patch10:	%{name}-aliasing.patch
+Patch11:	%{name}-gcc15.patch
+Patch12:	%{name}-javadoc.patch
+Patch13:	%{name}-doxygen.patch
+URL:		https://structure.io/openni
 BuildRequires:	OpenGL-devel
 BuildRequires:	OpenGL-glut-devel >= 3
 %{?with_apidocs:BuildRequires:	doxygen}
 %{?with_apidocs:BuildRequires:	graphviz}
-%{?with_java:BuildRequires:	jdk >= 1.6.0}
+%{?with_java:%buildrequires_jdk}
 BuildRequires:	libjpeg-devel
 BuildRequires:	libstdc++-devel >= 6:4.0
 BuildRequires:	libusb-devel >= 1.0.8
-BuildRequires:	python >= 1:2.6
 BuildRequires:	rpm-build >= 4.6
-BuildRequires:	rpmbuild(macros) >= 1.566
-BuildRequires:	sed >= 4.0
+%{?with_java:BuildRequires:	rpm-javaprov}
+BuildRequires:	rpmbuild(macros) >= 2.021
 BuildRequires:	udev-devel
 # NOTE: other platforms need adding a dozen of defines in Include/Linux-*/*.h
 ExclusiveArch:	%{ix86} %{x8664} x32 %{arm}
@@ -114,13 +119,26 @@ Summary(pl.UTF-8):	Interfejs Javy do OpenNI2
 Group:		Libraries/Java
 Requires:	%{name} = %{version}-%{release}
 Requires:	jpackage-utils
-Requires:	jre >= 1.6.0
+Requires:	jre
 
 %description -n java-OpenNI2
 Java wrapper for OpenNI2.
 
 %description -n java-OpenNI2 -l pl.UTF-8
 Interfejs Javy do OpenNI2.
+
+%package -n java-OpenNI2-javadoc
+Summary:	Javadoc documentation for OpenNI2 Java wrapper
+Summary(pl.UTF-8):	Dokumentacja javadoc interfejsu Javy do OpenNI2
+Group:		Documentation
+Requires:	jpackage-utils
+BuildArch:	noarch
+
+%description -n java-OpenNI2-javadoc
+Javadoc documentation for OpenNI2 Java wrapper.
+
+%description -n java-OpenNI2-javadoc -l pl.UTF-8
+Dokumentacja javadoc interfejsu Javy do OpenNI2.
 
 %prep
 %setup -q -n %{name}-2.2-%{subver}
@@ -133,10 +151,19 @@ Interfejs Javy do OpenNI2.
 %patch -P6 -p1
 %patch -P7 -p1
 %patch -P8 -p1
+%patch -P9 -p1
+%patch -P10 -p1
+%patch -P11 -p1
+%patch -P12 -p1
+%patch -P13 -p1
 
 %build
-export CFLAGS="%{rpmcflags} -Wno-unused-local-typedefs -Wno-enum-compare -Wno-unused-local-typedefs -Wno-misleading-indentation"
-export CXXFLAGS="%{rpmcxxflags} -Wno-unused-local-typedefs -Wno-enum-compare -Wno-unused-local-typedefs -Wno-misleading-indentation"
+%if %{with java}
+export PATH="%{java_home}/bin:$PATH"
+%endif
+# all sources are compiled with $(CXX) $(CFLAGS); bundled glh and Bayer.cpp use register, removed in C++17
+export CFLAGS="%{rpmcxxflags} -std=gnu++14"
+export LDFLAGS="%{rpmldflags}"
 %{__make} \
 	CFG=Release \
 	CXX="%{__cxx}" \
@@ -147,10 +174,13 @@ export CXXFLAGS="%{rpmcxxflags} -Wno-unused-local-typedefs -Wno-enum-compare -Wn
 
 %if %{with apidocs}
 cd Source/Documentation
+# pages MainPage.txt links to; generated the way upstream's Runme.py does
+install -d Temp
+{ echo '/** @page legal Legal Stuff & Acknowledgments'; cat ../../NOTICE; echo '*/'; } > Temp/NOTICE.txt
+{ echo '/** @page release_notes Release Notes'; cat ../../ReleaseNotes.txt; echo '*/'; } > Temp/ReleaseNotes.txt.txt
 doxygen Doxyfile
 %if %{with java}
-# fails with "unknown tag" errors since Java 8
-#javadoc -d java $(find ../../Wrappers/java/OpenNI.java/src/org/openni -type f)
+%{javadoc} -d java ../../Wrappers/java/OpenNI.java/src/org/openni/*.java
 %endif
 %endif
 
@@ -195,6 +225,11 @@ install -p ${BDIR}/libOpenNI2.jni.so $RPM_BUILD_ROOT%{_libdir}
 cp -p ${BDIR}/org.openni.jar $RPM_BUILD_ROOT%{_javadir}
 %endif
 
+%if %{with apidocs} && %{with java}
+install -d $RPM_BUILD_ROOT%{_javadocdir}
+cp -pr Source/Documentation/java $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+%endif
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -224,14 +259,14 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_libdir}/libOpenNI2.so
+%{_libdir}/libOpenNI2.so
 %{_includedir}/openni2
 %{_pkgconfigdir}/libopenni2.pc
 
 %if %{with apidocs}
 %files apidocs
 %defattr(644,root,root,755)
-%doc Source/Documentation/html/*.{bmp,css,html,js,png}
+%doc Source/Documentation/html/*.{bmp,css,html,js,png,svg}
 %endif
 
 %if %{with java}
@@ -239,4 +274,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/libOpenNI2.jni.so
 %{_javadir}/org.openni.jar
+%endif
+
+%if %{with apidocs} && %{with java}
+%files -n java-OpenNI2-javadoc
+%defattr(644,root,root,755)
+%{_javadocdir}/%{name}
 %endif

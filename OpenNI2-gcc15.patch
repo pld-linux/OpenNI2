@@ -1,0 +1,135 @@
+GCC 15 -Werror fixes: terminate truncated strncpy, memcpy in XnString::Resize (bogus -Wstringop-truncation),
+mark compile-assert typedef unused; glh -Wmisleading-indentation hunks from Debian 0013-Fix-GCC6-compilation
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnActualPropertiesHash.cpp.orig
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnActualPropertiesHash.cpp
+@@ -28,7 +28,8 @@
+ 
+ XnActualPropertiesHash::XnActualPropertiesHash(const XnChar* strName)
+ {
+-	strncpy(m_strName, strName, XN_DEVICE_MAX_STRING_LENGTH);
++	strncpy(m_strName, strName, XN_DEVICE_MAX_STRING_LENGTH-1);
++	m_strName[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ }
+ 
+ XnActualPropertiesHash::~XnActualPropertiesHash()
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnActualStringProperty.cpp.orig
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnActualStringProperty.cpp
+@@ -29,7 +29,8 @@
+ XnActualStringProperty::XnActualStringProperty(XnUInt32 propertyId, const XnChar* strName, const XnChar* strInitialValue /* = "" */, const XnChar* strModule /* = "" */ ) :
+ 	XnStringProperty(propertyId, strName, m_strValue, strModule)
+ {
+-	strncpy(m_strValue, strInitialValue, XN_DEVICE_MAX_STRING_LENGTH);
++	strncpy(m_strValue, strInitialValue, XN_DEVICE_MAX_STRING_LENGTH-1);
++	m_strValue[XN_DEVICE_MAX_STRING_LENGTH-1] = 0;
+ 	// set a callback for get operations
+ 	UpdateGetCallback(GetCallback, this);
+ }
+--- OpenNI2-2.2-beta2/Source/Drivers/PSLink/LinkProtoLib/XnLinkProtoUtils.h.orig
++++ OpenNI2-2.2-beta2/Source/Drivers/PSLink/LinkProtoLib/XnLinkProtoUtils.h
+@@ -15,7 +15,7 @@
+ #define XN_MASK_LINK "xnLink"
+ 
+ #ifndef XN_COMPILER_ASSERT
+-#define XN_COMPILER_ASSERT(x) typedef int compileAssert[x ? 1 : -1]
++#define XN_COMPILER_ASSERT(x) typedef int compileAssert[x ? 1 : -1] __attribute__((unused))
+ #endif
+ 
+ template <typename T>
+--- OpenNI2-2.2-beta2/ThirdParty/GL/glh/glh_glut2.h.orig
++++ OpenNI2-2.2-beta2/ThirdParty/GL/glh/glh_glut2.h
+@@ -190,7 +190,7 @@
+   {
+       if (interactors.empty())
+ 	  return;
+-	  std::list<glut_interactor *>::iterator it = 
++      std::list<glut_interactor *>::iterator it = 
+ 		  std::find(interactors.begin(), interactors.end(), gi);
+ 	if(it != interactors.end())
+ 	  interactors.erase(it);
+--- OpenNI2-2.2-beta2/ThirdParty/GL/glh/glh_linear.h.orig
++++ OpenNI2-2.2-beta2/ThirdParty/GL/glh/glh_linear.h
+@@ -225,7 +225,7 @@
+ 		for(int i = 0; i < N; i++)
+ 			if(v1.v[i] != v2.v[i])
+ 				return false;
+-			return true;
++		return true;
+ 	}
+ 	
+ 	template <int N, class T> inline
+@@ -633,7 +633,7 @@
+ 			scp[i] = real(fabs(s[i][0]));
+ 			for(j=1;j<4;j++)
+ 				if(real(fabs(s[i][j])) > scp[i]) scp[i] = real(fabs(s[i][j]));
+-				if(scp[i] == 0.0) return minv; // singular matrix!
++			if(scp[i] == 0.0) return minv; // singular matrix!
+ 		}
+ 		
+ 		int pivot_to;
+@@ -647,26 +647,26 @@
+ 			for(p=i+1;p<4;p++)
+ 				if(real(fabs(s[p][i]/scp[p])) > scp_max)
+ 				{ scp_max = real(fabs(s[p][i]/scp[p])); pivot_to = p; }
+-				// Pivot if necessary
+-				if(pivot_to != i)
+-				{
+-					tmprow = s[i];
+-					s[i] = s[pivot_to];
+-					s[pivot_to] = tmprow;
+-					real tmpscp;
+-					tmpscp = scp[i];
+-					scp[i] = scp[pivot_to];
+-					scp[pivot_to] = tmpscp;
+-				}
+-				
+-				real mji;
+-				// perform gaussian elimination
+-				for(j=i+1;j<4;j++)
+-				{
+-					mji = s[j][i]/s[i][i];
+-					s[j][i] = 0.0;
+-					for(jj=i+1;jj<8;jj++)
+-						s[j][jj] -= mji*s[i][jj];
++			// Pivot if necessary
++			if(pivot_to != i)
++			{
++				tmprow = s[i];
++				s[i] = s[pivot_to];
++				s[pivot_to] = tmprow;
++				real tmpscp;
++				tmpscp = scp[i];
++				scp[i] = scp[pivot_to];
++				scp[pivot_to] = tmpscp;
++			}
++
++			real mji;
++			// perform gaussian elimination
++			for(j=i+1;j<4;j++)
++			{
++				mji = s[j][i]/s[i][i];
++				s[j][i] = 0.0;
++				for(jj=i+1;jj<8;jj++)
++					s[j][jj] -= mji*s[i][jj];
+ 				}
+ 		}
+ 		if(s[3][3] == 0.0) return minv; // singular matrix!
+@@ -702,7 +702,7 @@
+ 			for(j=0;j<4;j++)
+ 				minv(i,j) = s[i][j+4] / s[i][i];
+ 			
+-			return minv;
++		return minv;
+ 	}
+     
+     
+--- OpenNI2-2.2-beta2/ThirdParty/PSCommon/XnLib/Include/XnString.h.orig
++++ OpenNI2-2.2-beta2/ThirdParty/PSCommon/XnLib/Include/XnString.h
+@@ -115,7 +115,7 @@
+ 		XnChar* newData = XN_NEW_ARR(XnChar, newSize);
+ 		if (m_str != NULL)
+ 		{
+-			strncpy(newData, m_str, m_capacity);
++			memcpy(newData, m_str, m_capacity);
+ 			XN_DELETE_ARR(m_str);
+ 		}
+ 		m_str = newData;

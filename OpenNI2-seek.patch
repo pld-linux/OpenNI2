@@ -1,0 +1,118 @@
+Seek fixes. Device::invoke: Seek struct handed on via data went out of scope (upstream bec66c0e instead passes it for every command).
+From upstream develop: 7f384612 + 3f776fba (failed seek deadlocked the caller), 64a0433a (NULL source), 2125ea61 (NiViewer invalid frame).
+--- OpenNI2-2.2-beta2/Source/Core/OniDevice.cpp.orig
++++ OpenNI2-2.2-beta2/Source/Core/OniDevice.cpp
+@@ -202,6 +202,9 @@
+ }
+ OniStatus Device::invoke(int commandId, void* data, int dataSize)
+ {
++	// data may point here, so it must outlive the call below
++	Device::Seek seek;
++
+ 	if (commandId == ONI_DEVICE_COMMAND_SEEK)
+ 	{
+ 		if (dataSize != sizeof(OniSeek))
+@@ -210,7 +213,6 @@
+ 		}
+ 
+ 		// Change seek's stream handle.
+-		Device::Seek seek;
+ 		OniSeek* pSeek = (OniSeek*)data;
+ 		seek.frameId = pSeek->frameIndex;
+ 		seek.pStream = ((_OniStream*)pSeek->stream)->pStream->getHandle();
+--- OpenNI2-2.2-beta2/Source/Drivers/OniFile/PlayerDevice.cpp.orig
++++ OpenNI2-2.2-beta2/Source/Drivers/OniFile/PlayerDevice.cpp
+@@ -91,7 +91,7 @@
+ };
+ 
+ PlayerDevice::PlayerDevice(const xnl::String& filePath) : 
+-	m_filePath(filePath), m_fileHandle(0), m_threadHandle(NULL), m_running(FALSE), m_isSeeking(FALSE),
++	m_filePath(filePath), m_fileHandle(0), m_threadHandle(NULL), m_running(FALSE), m_isSeeking(FALSE), m_seekingFailed(FALSE),
+ 	m_dPlaybackSpeed(1.0), m_nStartTimestamp(0), m_nStartTime(0), m_bHasTimeReference(FALSE), 
+ 	m_bRepeat(TRUE), m_player(filePath.Data()), m_driverEOFCallback(NULL), m_driverCookie(NULL)
+ {
+@@ -438,6 +438,7 @@
+ 		m_seek.frameId = pSeek->frameId;
+ 		m_seek.pStream = pSeek->pStream;
+ 		m_isSeeking = TRUE;
++        m_seekingFailed = FALSE;
+ 
+ 		// Set the ready for data and manual trigger events, to make sure player thread wakes up.
+ 		m_readyForDataInternalEvent.Set();
+@@ -445,6 +446,9 @@
+ 
+ 		// Wait for seek to complete.
+ 		m_SeekCompleteInternalEvent.Wait(XN_WAIT_INFINITE);
++        
++        if (m_seekingFailed)
++            return ONI_STATUS_ERROR;
+ 	}
+ 	else
+ 	{
+@@ -555,12 +559,18 @@
+ 
+ 			// Seek the frame ID for first source (seek to (frame ID-1) so next read frame is frameId).
+ 			PlayerSource* pSource = m_seek.pStream->GetSource();
+-			XnStatus xnrc = m_player.SeekToFrame(pSource->GetNodeName(), m_seek.frameId, XN_PLAYER_SEEK_SET);
++
++			XnStatus xnrc;
++			if(pSource) {
++				xnrc = m_player.SeekToFrame(pSource->GetNodeName(), m_seek.frameId, XN_PLAYER_SEEK_SET);
++			}else{
++				xnrc = XN_STATUS_ERROR;
++			}
++
+ 			if (xnrc != XN_STATUS_OK)
+ 			{
+ 				// Failure to seek.
+-				m_isSeeking = FALSE;
+-				continue;
++				m_seekingFailed = TRUE;
+ 			}
+ 
+ 			// Return playback speed to normal.
+@@ -573,11 +583,11 @@
+ 			// Reset the time reference.
+ 			m_bHasTimeReference = FALSE;
+ 
+-			// Raise the seek complete event.
+-			m_SeekCompleteInternalEvent.Set();
+-
+ 			// Mark the seeking flag as false.
+ 			m_isSeeking = FALSE;
++			
++			// Raise the seek complete event.
++			m_SeekCompleteInternalEvent.Set();
+ 		}
+ 		else
+ 		{
+--- OpenNI2-2.2-beta2/Source/Drivers/OniFile/PlayerDevice.h.orig
++++ OpenNI2-2.2-beta2/Source/Drivers/OniFile/PlayerDevice.h
+@@ -147,6 +147,7 @@
+ 	// Seek frame.
+ 	Seek m_seek;
+ 	OniBool m_isSeeking;
++    OniBool m_seekingFailed;
+ 
+ 	// Speed of playback.
+ 	XnDouble m_dPlaybackSpeed;
+--- OpenNI2-2.2-beta2/Source/Tools/NiViewer/Device.cpp.orig
++++ OpenNI2-2.2-beta2/Source/Tools/NiViewer/Device.cpp
+@@ -449,7 +449,7 @@
+ 		}
+ 
+ 		// the new frameId might be different than expected (due to clipping to edges)
+-		frameId = pCurFrame->getFrameIndex();
++		frameId = pCurFrame->isValid()? pCurFrame->getFrameIndex() : 0;
+ 
+ 		displayMessage("Current frame: %u/%u", frameId, numberOfFrames);
+ 	}
+@@ -478,7 +478,7 @@
+ 	if (pStream == NULL)
+ 		return;
+ 
+-	int frameId = pCurFrame->getFrameIndex();
++	int frameId = pCurFrame->isValid() ? pCurFrame->getFrameIndex() : 0;
+ 	// Calculate the new frame ID
+ 	frameId = (frameId + nDiff < 1) ? 1 : frameId + nDiff;
+ 

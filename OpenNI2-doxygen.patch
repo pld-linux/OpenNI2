@@ -1,0 +1,12 @@
+CHM output needs the Windows HTML Help compiler (HHC_LOCATION) and makes doxygen turn off the tree view.
+--- OpenNI2-2.2-beta2/Source/Documentation/Doxyfile.orig
++++ OpenNI2-2.2-beta2/Source/Documentation/Doxyfile
+@@ -1030,7 +1030,7 @@
+ # Microsoft HTML help workshop to generate a compiled HTML help file (.chm) 
+ # of the generated HTML documentation.
+ 
+-GENERATE_HTMLHELP      = YES
++GENERATE_HTMLHELP      = NO
+ 
+ # If the GENERATE_HTMLHELP tag is set to YES, the CHM_FILE tag can 
+ # be used to specify the file name of the resulting .chm file. You 

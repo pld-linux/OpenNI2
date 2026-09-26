@@ -1,0 +1,46 @@
+Typed GetProperty() overloads stored through (XnProperty**) casts of XnXxxProperty** - strict aliasing
+violation; at -O2 GCC reports callers reading pProp uninitialized (-Wmaybe-uninitialized).
+--- OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnDeviceModule.cpp.orig
++++ OpenNI2-2.2-beta2/Source/Drivers/PS1080/DDK/XnDeviceModule.cpp
+@@ -546,24 +546,37 @@
+ 	return (XN_STATUS_OK);
+ }
+ 
++// storing through (XnProperty**)ppXxxProperty violates strict aliasing - the caller may never see the value
+ XnStatus XnDeviceModule::GetProperty(XnUInt32 propertyId, XnIntProperty **ppIntProperty) const
+ {
+-	return GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_INTEGER, (XnProperty**)ppIntProperty);
++	XnProperty* pProperty;
++	XnStatus nRetVal = GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_INTEGER, &pProperty);
++	*ppIntProperty = (XnIntProperty*)pProperty;
++	return nRetVal;
+ }
+ 
+ XnStatus XnDeviceModule::GetProperty(XnUInt32 propertyId, XnRealProperty **ppRealProperty) const
+ {
+-	return GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_REAL, (XnProperty**)ppRealProperty);
++	XnProperty* pProperty;
++	XnStatus nRetVal = GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_REAL, &pProperty);
++	*ppRealProperty = (XnRealProperty*)pProperty;
++	return nRetVal;
+ }
+ 
+ XnStatus XnDeviceModule::GetProperty(XnUInt32 propertyId, XnStringProperty **ppStringProperty) const
+ {
+-	return GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_STRING, (XnProperty**)ppStringProperty);
++	XnProperty* pProperty;
++	XnStatus nRetVal = GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_STRING, &pProperty);
++	*ppStringProperty = (XnStringProperty*)pProperty;
++	return nRetVal;
+ }
+ 
+ XnStatus XnDeviceModule::GetProperty(XnUInt32 propertyId, XnGeneralProperty **ppPtrProperty) const
+ {
+-	return GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_GENERAL, (XnProperty**)ppPtrProperty);
++	XnProperty* pProperty;
++	XnStatus nRetVal = GetPropertyImpl(propertyId, XN_PROPERTY_TYPE_GENERAL, &pProperty);
++	*ppPtrProperty = (XnGeneralProperty*)pProperty;
++	return nRetVal;
+ }
+ 
+ XnStatus XnDeviceModule::GetAllProperties(XnPropertySet* pSet) const

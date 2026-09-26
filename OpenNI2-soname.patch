@@ -59,7 +59,7 @@
 +LIB_NAME = OpenNI2
 +LIB_NAME_SOVERSION=$(MAJOR_VERSION).$(MINOR_VERSION)
  LIB_DIRS = ../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
- USED_LIBS = XnLib dl pthread
+ USED_LIBS = XnLib jpeg dl pthread
  ifneq ("$(OSTYPE)","Darwin")
 #--- a/Wrappers/java/OpenNI.jni/Makefile
 #+++ b/Wrappers/java/OpenNI.jni/Makefile
